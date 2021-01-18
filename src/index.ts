@@ -36,6 +36,7 @@ let isNoisy = false; // is outer mouse cursor noisy
 const noiseScale = 150; // speed of distortion
 const noiseRange = 4; // range of distortion
 const cursorRadius = 15; // radius of outer cursor when small
+let segmentCoordinates = []; // segment coords for outer cursor
 
 function init() {
   const innerCursor: HTMLElement = document.querySelector(".cursor--small"); // inner cursor
@@ -58,12 +59,12 @@ function initCanvas() {
   // Create outer cursor shape
   const polygon = new paper.Path.RegularPolygon(
     new paper.Point(0, 0),
-    6, // segments
+    4, // segments
     cursorRadius // radius (in pixels)
   );
   polygon.strokeColor = new paper.Color(255, 0, 0, 0.5);
   polygon.strokeWidth = 1;
-  polygon.smooth();
+  // polygon.smooth();
 
   const group = new paper.Group([polygon]);
   group.applyMatrix = false;
@@ -88,7 +89,6 @@ function initCanvas() {
   };
 
   const noiseObjects = polygon.segments.map(() => new SimplexNoise());
-  let segmentCoordinates = []; // segment coords for outer cursor
   paper.view.onFrame = (event) => {
     // Under the hood, onFrame calls requestAnimationFrame()
     if (!isAnchored) {
@@ -104,10 +104,16 @@ function initCanvas() {
     }
 
     // If outer cursor is anchored and is small
-    if (isAnchored && polygon.bounds.width < anchorBounds.width) {
-      // Scale up the shape a little bit every frame
-      polygon.scale(1.08);
-    } else if (!isAnchored && polygon.bounds.width > cursorRadius * 2) {
+    if (isAnchored) {
+      // Scale up the shape horizontally a little bit every frame
+      if (polygon.bounds.width < anchorBounds.width) {
+        polygon.scale(1.08, 1);
+      }
+      // Scale up the shape vertically a little bit every frame
+      if (polygon.bounds.height < anchorBounds.height) {
+        polygon.scale(1, 1.08);
+      }
+    } else {
       // If outer cursor is not anchored and is large (scaled up)
       if (isNoisy) {
         // If outer cursor is noisy, remove its noise
@@ -119,8 +125,12 @@ function initCanvas() {
       }
 
       // Reset outer cursor size
-      const scaleDown = 0.92;
-      polygon.scale(scaleDown);
+      if (polygon.bounds.width > cursorRadius * 2) {
+        polygon.scale(0.92, 1);
+      }
+      if (polygon.bounds.height > cursorRadius * 2) {
+        polygon.scale(1, 0.92);
+      }
     }
 
     // If outer cursor is anchored and is large
@@ -148,19 +158,26 @@ function initCanvas() {
         segment.point.set(newX, newY);
       });
     }
-    polygon.smooth();
+    // polygon.smooth();
   };
 }
 
 function initAnchors() {
   let isFocused = false;
 
-  const handleMouseEnter = (e) => {
-    const item = e.currentTarget;
+  const updateAnchor = (item: HTMLElement) => {
     const itemBox = item.getBoundingClientRect();
     // Get the coordinates of the center of the link being hovered
     anchor.x = Math.round(itemBox.left + itemBox.width / 2);
     anchor.y = Math.round(itemBox.top + itemBox.height / 2);
+    // Update anchorBounds
+    anchorBounds.width = itemBox.width;
+    anchorBounds.height = itemBox.height;
+  };
+
+  const handleMouseEnter = (e) => {
+    const item: HTMLElement = e.currentTarget;
+    updateAnchor(item);
     isAnchored = true;
   };
 
@@ -172,23 +189,21 @@ function initAnchors() {
 
   const handleFocus = (e: FocusEvent) => {
     const item = e.target as HTMLElement;
-    const itemBox = item.getBoundingClientRect();
-    anchor.x = Math.round(itemBox.left + itemBox.width / 2);
-    anchor.y = Math.round(itemBox.top + itemBox.height / 2);
     isAnchored = true;
     isFocused = true;
-  }
+    updateAnchor(item);
+  };
 
   const handleBlur = () => {
     isAnchored = false;
     isFocused = false;
-  }
+  };
 
   const linkItems = document.querySelectorAll(".link");
   linkItems.forEach((item) => {
     item.addEventListener("mouseenter", handleMouseEnter);
     item.addEventListener("mouseleave", handleMouseLeave);
-    item.addEventListener("focus", handleFocus);
-    item.addEventListener("blur", handleBlur);
+    // item.addEventListener("focus", handleFocus);
+    // item.addEventListener("blur", handleBlur);
   });
 }
