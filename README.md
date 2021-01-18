@@ -1,4 +1,4 @@
-# Sass w/ TypeScript template
+# Custom Cursor Experiment
 This project contains boilerplate code for a Sass project with type checking. webpack is used for compiling and bundling all code, including imported npm packages.
 
 ## Running the project
