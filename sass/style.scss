@@ -10,6 +10,7 @@
   height: 100%;
   width: 100%;
   display: flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
 
@@ -40,10 +41,17 @@
 }
 
 .link {
+  display: inline-block;
   font-size: 4rem;
   cursor: none;
+  outline: none;
 
-  &:hover {
+  &:not(:last-child) {
+    margin-bottom: 3rem;
+  }
+
+  &:hover,
+  &:focus {
     color: var(--color-text);
   }
 }
