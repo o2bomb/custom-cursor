@@ -107,7 +107,7 @@ function initCanvas() {
     if (isAnchored && polygon.bounds.width < anchorBounds.width) {
       // Scale up the shape a little bit every frame
       polygon.scale(1.08);
-    } else if (!isAnchored && polygon.bounds.width > cursorRadius*2) {
+    } else if (!isAnchored && polygon.bounds.width > cursorRadius * 2) {
       // If outer cursor is not anchored and is large (scaled up)
       if (isNoisy) {
         // If outer cursor is noisy, remove its noise
@@ -153,22 +153,42 @@ function initCanvas() {
 }
 
 function initAnchors() {
+  let isFocused = false;
+
   const handleMouseEnter = (e) => {
-    const navItem = e.currentTarget;
-    const navItemBox = navItem.getBoundingClientRect();
+    const item = e.currentTarget;
+    const itemBox = item.getBoundingClientRect();
     // Get the coordinates of the center of the link being hovered
-    anchor.x = Math.round(navItemBox.left + navItemBox.width / 2);
-    anchor.y = Math.round(navItemBox.top + navItemBox.height / 2);
+    anchor.x = Math.round(itemBox.left + itemBox.width / 2);
+    anchor.y = Math.round(itemBox.top + itemBox.height / 2);
     isAnchored = true;
   };
 
   const handleMouseLeave = () => {
-    isAnchored = false;
+    if (!isFocused) {
+      isAnchored = false;
+    }
   };
+
+  const handleFocus = (e: FocusEvent) => {
+    const item = e.target as HTMLElement;
+    const itemBox = item.getBoundingClientRect();
+    anchor.x = Math.round(itemBox.left + itemBox.width / 2);
+    anchor.y = Math.round(itemBox.top + itemBox.height / 2);
+    isAnchored = true;
+    isFocused = true;
+  }
+
+  const handleBlur = () => {
+    isAnchored = false;
+    isFocused = false;
+  }
 
   const linkItems = document.querySelectorAll(".link");
   linkItems.forEach((item) => {
     item.addEventListener("mouseenter", handleMouseEnter);
     item.addEventListener("mouseleave", handleMouseLeave);
+    item.addEventListener("focus", handleFocus);
+    item.addEventListener("blur", handleBlur);
   });
 }
