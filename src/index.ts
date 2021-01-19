@@ -11,8 +11,8 @@ document.addEventListener("mousemove", (e) => {
 
 // Current position of mouse
 const current = {
-  x: 0,
-  y: 0,
+  x: -100,
+  y: -100,
 };
 // Previous position of mouse
 const previous = {
@@ -37,6 +37,7 @@ const noiseScale = 150; // speed of distortion
 const noiseRange = 4; // range of distortion
 const cursorRadius = 15; // radius of outer cursor when small
 let segmentCoordinates = []; // segment coords for outer cursor
+let polygon: paper.Path.RegularPolygon;
 
 function init() {
   const innerCursor: HTMLElement = document.querySelector(".cursor--small"); // inner cursor
@@ -57,7 +58,7 @@ function initCanvas() {
   paper.setup(canvas);
 
   // Create outer cursor shape
-  const polygon = new paper.Path.RegularPolygon(
+  polygon = new paper.Path.RegularPolygon(
     new paper.Point(0, 0),
     4, // segments
     cursorRadius // radius (in pixels)
@@ -192,6 +193,13 @@ function initAnchors() {
     isAnchored = true;
     isFocused = true;
     updateAnchor(item);
+    // Fix for cursor moving between focused items spazzing out
+    polygon.segments.forEach((segment, i) => {
+      segment.point.set(segmentCoordinates[i][0], segmentCoordinates[i][1]);
+    });
+    isNoisy = false;
+    segmentCoordinates = [];
+    polygon.scale(0.1, 0.1);
   };
 
   const handleBlur = () => {
@@ -203,7 +211,7 @@ function initAnchors() {
   linkItems.forEach((item) => {
     item.addEventListener("mouseenter", handleMouseEnter);
     item.addEventListener("mouseleave", handleMouseLeave);
-    // item.addEventListener("focus", handleFocus);
-    // item.addEventListener("blur", handleBlur);
+    item.addEventListener("focus", handleFocus);
+    item.addEventListener("blur", handleBlur);
   });
 }
